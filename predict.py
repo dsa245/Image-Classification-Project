@@ -22,7 +22,7 @@ device = torch.device('cuda' if args.gpu and torch.cuda.is_available() else 'cpu
 def load_checkpoint(filepath):
     checkpoint = torch.load(filepath, map_location=device)
   
-    model = checkpoint['arch']
+    model = models.__dict__[checkpoint['arch']](pretrained=True)
 
     for param in model.parameters():
         param.requires_grad = False
