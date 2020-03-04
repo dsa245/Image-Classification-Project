@@ -15,22 +15,23 @@ parser.add_argument('image_path', type=str, action='store', help='path to the im
 parser.add_argument('--checkpoint_path', type=str, default='checkpoint.pth', help='path to save checkpoint')
 parser.add_argument('--gpu', type=bool, default=False, action='store', help='use gpu')
 parser.add_argument('--topk', type=int, default=5, action='store', help='top k classes')
+parser.add_argument('--category_names', type=str, default='cat_to_name.json', help='Image category file')
 
 args = parser.parse_args()
 device = torch.device('cuda' if args.gpu and torch.cuda.is_available() else 'cpu')
 def load_checkpoint(filepath):
-  checkpoint = torch.load(filepath, map_location=device)
+    checkpoint = torch.load(filepath, map_location=device)
   
-  model = checkpoint['arch']
+    model = checkpoint['arch']
 
-  for param in model.parameters():
-    param.requires_grad = False
+    for param in model.parameters():
+        param.requires_grad = False
 
-  model.classifier = checkpoint['classfier']
-  model.load_state_dict(checkpoint['model_state_dict'])
-  model.class_to_idx = checkpoint['class_to_idx']
+    model.classifier = checkpoint['classfier']
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.class_to_idx = checkpoint['class_to_idx']
 
-  return model
+    return model
 
 def process_image(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
@@ -54,36 +55,36 @@ def predict(image_path, model, topk=5):
     idx_class_mapping = {v: k for k, v in class_idx_mapping.items()}
 
     with torch.no_grad():
-      inputs = process_image(image_path)
-      inputs.unsqueeze_(0)
-      inputs = inputs.to(device)
-      outputs = model.forward(inputs)
-      ps = torch.exp(outputs)
-      probs, indices = ps.topk(topk, dim = 1)
-      probs = [prob.item() for prob in probs[0]]
-      classes = [idx_class_mapping[index.item()] for index in indices[0]]
-    
+        inputs = process_image(image_path)
+        inputs.unsqueeze_(0)
+        inputs = inputs.to(device)
+        outputs = model.forward(inputs)
+        ps = torch.exp(outputs)
+        probs, indices = ps.topk(topk, dim = 1)
+        probs = [prob.item() for prob in probs[0]]
+        classes = [idx_class_mapping[index.item()] for index in indices[0]]
+      
     return probs, classes
 
 
 def main():
-	import json
-	with open('cat_to_name.json', 'r') as f:
-		cat_to_name = json.load(f)
+    import json
+    with open(args.category_names, 'r') as f:
+      cat_to_name = json.load(f)
 
 	
 
 
-	model = load_checkpoint(args.checkpoint_path)
+    model = load_checkpoint(args.checkpoint_path)
 
 
-	probs, classes = predict(args.image_path, model, args.topk)
-	class_names = [cat_to_name[c] for c in classes]
-	print(probs)
-	print(classes)
-	print(class_names)
+    probs, classes = predict(args.image_path, model, args.topk)
+    class_names = [cat_to_name[c] for c in classes]
+    print(probs)
+    print(classes)
+    print(class_names)
 
 if __name__ == "__main__":
-	main()
+    main()
 
 
